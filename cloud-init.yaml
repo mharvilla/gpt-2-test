@@ -1,0 +1,32 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - python3
+  - python3-pip
+  - git
+  - nginx
+  - build-essential
+  - libssl-dev
+  - libffi-dev
+
+runcmd:
+  # 1. Clone the repository
+  - git clone https://github.com/mharvilla/gpt-2-test.git /opt/gpt2-flask-server
+
+  # 3. Install Python dependencies
+  - pip3 install -r /opt/gpt2-flask-server/requirements.txt
+
+  # 4. Install GPU-accelerated PyTorch
+  - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+  # 5. Copy the Nginx configuration file
+  - cp /opt/gpt2-flask-server/nginx/gpt2-app /etc/nginx/sites-available/gpt2-app
+  - ln -s /etc/nginx/sites-available/gpt2-app /etc/nginx/sites-enabled/gpt2-app
+  - rm /etc/nginx/sites-enabled/default
+
+  # 6. Start Nginx
+  - systemctl restart nginx
+
+  # 7. Start the Flask app in the background
+  - nohup python3 /opt/gpt2-flask-server/run.py > /opt/gpt2-flask-server/app.log 2>&1 &
